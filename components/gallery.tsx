@@ -126,7 +126,7 @@ export function Gallery() {
                   onError={() => setErrored((prev) => ({ ...prev, [photo.src]: true }))}
                 />
                 {/* Gradient overlay with caption */}
-                <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-4 pb-5 font-serif text-base text-white opacity-0 transition-all duration-400 group-hover:translate-y-0 group-hover:opacity-100 sm:text-lg">
+                <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-4 pb-5 font-serif text-base text-white sm:text-lg">
                   {photo.caption}
                 </figcaption>
               </button>
