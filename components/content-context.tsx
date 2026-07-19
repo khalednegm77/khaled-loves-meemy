@@ -57,7 +57,8 @@ const defaultContent = {
     to: "meemy",
     date: "20.10.2025",
     message:
-      'bosy b"a ya meemy ya meemy\n\nana m4 3aref abda" mneen bs bgd ana bhb a3ee4 kol haga m3aky w sa3at kteer awy bgd lma b"3od lwahdy bfdl afakar feh hyatna m3 b3d ezay m4 3aref at5ylha mn 8eerek bgd\n\nkhalas rsmt most"bly 3leeky enty b"eety a8la haga feh hyaty w kol hyaty b34" kol tafseela feky bgd mn as8arhom l akbarhom\n\nbhb dehkna w hezarna w mrazytna feh b3d tool el wa"t bhb habtl bhb el tefla el gwaky awy bgd\n\nw 3omry ma tl3t 4a5syty deh m3 7d 8erek bgd w bt3rfy ttl3eny mn aw7sh mood mmkn awslo feh sanya bgd\n\nenty geety khalyty 7yaty b\'t helwa awy w nesfsy akmla m3aky bgd w bhbk awy ya meemy bgd.',
+      'bosy b"a ya meemy ya meemy\n\nana m4 3aref abda" mneen bs bgd ana bhb a3ee4 kol haga m3aky w sa3at kteer awy bgd lma b"3od lwahdy bfdl afakar feh hyatna m3 b3d ezay m4 3aref at5ylha mn 8eerek bgd\n\nkhalas rsmt most"bly 3leeky enty b"eety a8la haga feh hyaty w kol hyaty b34" kol tafseela feky bgd mn as8arhom l akbarhom\n\nbhb dehkna w hezarna w mrazytna feh b3d tool el wa"t bhb habtl bhb el tefla el gwaky awy bgd\n\nw 3omry ma tl3t 4a5syty deh m3 7d 8erek bgd w bt3rfy ttl3eny mn aw7sh mood mmkn awslo feh sanya bgd\n\nenty geety khalyty 7yaty b\'t helwa awy w nesfsy akmla m3aky bgd w bhbk awy ya meemy bgd nefsy a3rf enty ezay helwa w gemale w hnyna keda ezay w ezay btkhleeny mbkon4 3ayez a"oom mn m3aky keda enty a7la w agmal haga 7aslet feh 7yaty w b4kor el sodfa el gm3tny beeky bgd ya a8la haga feh hyaty 3omry ma kont atkhyl eny mmkn at8yr 3l4an ardy hd keda w eny asha mn noomy ykoon awal haga bdwr 3leeha w akoon 3ayez ardeh b ay tare"a 3l4an bs mkhrhoo4 ana m4 3aref awsf hoby leeky ezay bs el mot"kd mno eny bhbk awy bgd w en hoby leeky byzeed kol youm 3n el "blo.',
+
   },
   bucketlist: {
     subtitle: "Our dreams together",
