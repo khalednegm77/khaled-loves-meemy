@@ -1,0 +1,265 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-cormorant), 'Cormorant Garamond Fallback';
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond Fallback';
+  --font-sans: var(--font-jost), 'Jost Fallback';
+  --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.98 0.012 30);
+  --foreground: oklch(0.32 0.04 20);
+  --card: oklch(0.995 0.006 40);
+  --card-foreground: oklch(0.32 0.04 20);
+  --popover: oklch(0.995 0.006 40);
+  --popover-foreground: oklch(0.32 0.04 20);
+  --primary: oklch(0.55 0.12 18);
+  --primary-foreground: oklch(0.99 0.006 40);
+  --secondary: oklch(0.94 0.02 30);
+  --secondary-foreground: oklch(0.4 0.06 20);
+  --muted: oklch(0.95 0.015 35);
+  --muted-foreground: oklch(0.52 0.04 22);
+  --accent: oklch(0.78 0.07 35);
+  --accent-foreground: oklch(0.3 0.05 20);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.88 0.025 30);
+  --input: oklch(0.88 0.025 30);
+  --ring: oklch(0.55 0.12 18);
+  --chart-1: oklch(0.55 0.12 18);
+  --chart-2: oklch(0.7 0.09 30);
+  --chart-3: oklch(0.78 0.07 35);
+  --chart-4: oklch(0.85 0.05 40);
+  --chart-5: oklch(0.6 0.08 22);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ── Romantic palette tokens ─────────────────────────────── */
+:root {
+  --blush: oklch(0.92 0.035 15);
+  --blush-deep: oklch(0.85 0.05 15);
+  --champagne: oklch(0.90 0.04 75);
+  --champagne-deep: oklch(0.82 0.06 75);
+  --cream: oklch(0.97 0.015 60);
+  --soft-beige: oklch(0.94 0.012 50);
+  --rose-gold: oklch(0.75 0.08 35);
+}
+
+/* ── Scroll-triggered fade-up animation ─────────────────── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+}
+
+.reveal.is-visible {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Stagger children inside a revealed container */
+.reveal-stagger > * {
+  opacity: 0;
+}
+
+.reveal-stagger.is-visible > * {
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Gallery and video grids live inside a revealed section.  The section gets
+   `is-visible` from useReveal, so let that state reveal its staggered cards
+   as well.  Without this selector every card remains opacity: 0. */
+.reveal.is-visible .reveal-stagger > * {
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.reveal-stagger.is-visible > *:nth-child(1) { animation-delay: 0.05s; }
+.reveal-stagger.is-visible > *:nth-child(2) { animation-delay: 0.10s; }
+.reveal-stagger.is-visible > *:nth-child(3) { animation-delay: 0.15s; }
+.reveal-stagger.is-visible > *:nth-child(4) { animation-delay: 0.20s; }
+.reveal-stagger.is-visible > *:nth-child(5) { animation-delay: 0.25s; }
+.reveal-stagger.is-visible > *:nth-child(6) { animation-delay: 0.30s; }
+.reveal-stagger.is-visible > *:nth-child(7) { animation-delay: 0.35s; }
+.reveal-stagger.is-visible > *:nth-child(8) { animation-delay: 0.40s; }
+.reveal-stagger.is-visible > *:nth-child(9) { animation-delay: 0.45s; }
+.reveal-stagger.is-visible > *:nth-child(10) { animation-delay: 0.50s; }
+.reveal-stagger.is-visible > *:nth-child(11) { animation-delay: 0.55s; }
+.reveal-stagger.is-visible > *:nth-child(12) { animation-delay: 0.60s; }
+
+/* ── Lightbox transitions ───────────────────────────────── */
+@keyframes lightbox-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes lightbox-zoom-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.lightbox-backdrop {
+  animation: lightbox-fade-in 0.3s ease forwards;
+}
+
+.lightbox-image {
+  animation: lightbox-zoom-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Respect reduced motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-stagger > *,
+  .lightbox-backdrop,
+  .lightbox-image {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  * {
+    scroll-behavior: auto !important;
+  }
+}
