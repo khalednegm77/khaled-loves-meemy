@@ -15,11 +15,20 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>() {
     const el = ref.current
     if (!el) return
 
+    const reveal = () => {
+      el.classList.add("is-visible")
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      reveal()
+      return
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible")
+            reveal()
             observer.unobserve(entry.target)
           }
         })
@@ -28,7 +37,17 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>() {
     )
 
     observer.observe(el)
-    return () => observer.disconnect()
+
+    const fallback = window.setTimeout(() => {
+      if (!el.classList.contains("is-visible")) {
+        reveal()
+      }
+    }, 400)
+
+    return () => {
+      window.clearTimeout(fallback)
+      observer.disconnect()
+    }
   }, [])
 
   return ref
