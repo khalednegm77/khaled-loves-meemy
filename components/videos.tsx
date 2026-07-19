@@ -35,44 +35,8 @@ export function Videos() {
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [allMuted, setAllMuted] = useState(true)
-  const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set())
   const containerRef = useRef<HTMLDivElement>(null)
   const sectionRef = useReveal<HTMLElement>()
-
-  // Autoplay / pause: play when visible, pause when off-screen
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const index = Number((entry.target as HTMLElement).dataset.index)
-          const video = videoRefs.current[index]
-          if (!video) return
-
-          if (entry.isIntersecting) {
-            setPlayingVideos((prev) => {
-              const next = new Set(prev)
-              next.add(index)
-              return next
-            })
-            void video.play().catch(() => { })
-          } else {
-            setPlayingVideos((prev) => {
-              const next = new Set(prev)
-              next.delete(index)
-              return next
-            })
-            video.pause()
-          }
-        })
-      },
-      { threshold: 0.4 }
-    )
-
-    const figures = containerRef.current?.querySelectorAll("[data-index]")
-    figures?.forEach((f) => observer.observe(f))
-
-    return () => observer.disconnect()
-  }, [videos.length])
 
   useEffect(() => {
     videoRefs.current.forEach((video) => {
@@ -88,13 +52,23 @@ export function Videos() {
       video.muted = true
       setActiveIndex(null)
       setAllMuted(true)
+      video.pause()
     } else {
       videoRefs.current.forEach((v, i) => {
         if (v) v.muted = i !== index
       })
       video.muted = false
       video.volume = 1
-      void video.play()
+
+      if (video.readyState < 2) {
+        video.load()
+        window.setTimeout(() => {
+          void video.play().catch(() => { })
+        }, 150)
+      } else {
+        void video.play().catch(() => { })
+      }
+
       setActiveIndex(index)
       setAllMuted(false)
     }
@@ -154,23 +128,28 @@ export function Videos() {
           >
             {videos.map((video, index) => {
               const isActive = activeIndex === index
-              const isPlaying = playingVideos.has(index)
               return (
                 <figure
                   key={video.src}
                   data-index={index}
                   className="group relative overflow-hidden rounded-2xl border border-[var(--champagne-deep)]/20 bg-white shadow-[0_4px_24px_-8px_rgba(0,0,0,0.12)] transition-all duration-500 hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.2)] sm:rounded-3xl"
                 >
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleToggleSound(index)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        handleToggleSound(index)
+                      }
+                    }}
                     className="block w-full cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose-gold)] focus-visible:ring-offset-2"
                     aria-label={isActive ? `Mute ${video.caption}` : `Play ${video.caption} with sound`}
                   >
                     <video
                       ref={(el) => { videoRefs.current[index] = el }}
                       src={video.src}
-                      autoPlay
                       muted
                       loop
                       playsInline
@@ -206,18 +185,14 @@ export function Videos() {
                       )}
                     </span>
 
-                    {/* Playing indicator dot */}
-                    {isPlaying && (
-                      <span className="absolute left-3 top-3 h-2.5 w-2.5 animate-pulse rounded-full bg-red-500 shadow-sm" />
-                    )}
-
                     {/* Retry overlay for failed videos */}
                     {errored[video.src] && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 backdrop-blur-sm">
                         <p className="px-4 text-center text-sm text-white/90">Couldn&apos;t load this video</p>
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation()
                             setErrored((prev) => ({ ...prev, [video.src]: false }))
                             setRetryCount((prev) => ({ ...prev, [video.src]: 0 }))
                             const el = videoRefs.current[index]
@@ -229,7 +204,7 @@ export function Videos() {
                         </button>
                       </div>
                     )}
-                  </button>
+                  </div>
 
                   {/* Caption with soft gradient */}
                   <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-4 pb-5 font-serif text-base text-white sm:text-lg">
