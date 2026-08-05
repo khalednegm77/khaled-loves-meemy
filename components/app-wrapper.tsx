@@ -61,6 +61,7 @@ export function AppWrapper() {
         <LoveCounter />
         <AnniversaryCountdown />
         <Gallery />
+        <SafePlaceBook />
         <Videos />
         <Reasons />
         <LoveLetterSection />
