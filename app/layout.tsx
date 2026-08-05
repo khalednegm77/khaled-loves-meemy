@@ -54,6 +54,15 @@ export default function RootLayout({
       lang="en"
       className={`${cormorant.variable} ${jost.variable} ${geistMono.variable} bg-background`}
     >
+      <head>
+        {/* Inject Supabase env vars into window for client-side access */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.NEXT_PUBLIC_SUPABASE_URL = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')};
+            window.NEXT_PUBLIC_SUPABASE_ANON_KEY = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')};
+          `
+        }} />
+      </head>
       <body className="font-sans antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
