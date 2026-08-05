@@ -202,6 +202,8 @@ export function SafePlaceBook() {
     const [replyDraft, setReplyDraft] = useState("")
     const [selectedPage, setSelectedPage] = useState<number>(0)
     const [showConfirm, setShowConfirm] = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [saveError, setSaveError] = useState<string | null>(null)
     const [replyUnlocked, setReplyUnlocked] = useState(false)
     const [celebrateId, setCelebrateId] = useState<string | null>(null)
     const [resolveQuote, setResolveQuote] = useState("")
@@ -222,12 +224,28 @@ export function SafePlaceBook() {
                 .select("*")
                 .order("created_at", { ascending: true })
 
-            if (!error && data) {
+            if (error) {
+                // Surface instead of silently falling back to local/mock data.
+                console.error(
+                    "[v0] Failed to load safe_place_pages from Supabase:",
+                    error.message,
+                    "| code:",
+                    error.code,
+                    "| details:",
+                    error.details,
+                    "| hint:",
+                    error.hint,
+                )
+            } else if (data) {
                 const nextPages = data.map(mapDbPage)
                 setPages(nextPages)
                 saveToStorage(nextPages)
                 return
             }
+        } else {
+            console.warn(
+                "[v0] Supabase is NOT configured (missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY). Falling back to local storage — data will not sync to the database.",
+            )
         }
 
         if (typeof window !== "undefined") {
@@ -315,6 +333,14 @@ export function SafePlaceBook() {
         setReplyDraft("")
     }, [draft.writerName])
 
+    const closeAfterSave = () => {
+        resetDraft()
+        setSaveError(null)
+        setShowConfirm(false)
+        setBookOpen(false)
+        setShowWriterName(true)
+    }
+
     const handleSavePage = async () => {
         if (!draft.writerName.trim()) return
 
@@ -337,31 +363,65 @@ export function SafePlaceBook() {
             ],
         }
 
+        setSaving(true)
+        setSaveError(null)
+
+        // Primary path: persist to Supabase and READ BACK from the database so the
+        // UI reflects what is actually stored, not optimistic local state.
+        if (supabaseConfigured) {
+            const payload = mapPageToDb({
+                ...pageData,
+                userId: user?.id ?? pageData.userId,
+            })
+
+            const { data, error } = editId
+                ? await supabase.from("safe_place_pages").update(payload).eq("id", editId).select()
+                : await supabase.from("safe_place_pages").insert(payload).select()
+
+            if (error) {
+                console.error(
+                    "[v0] Failed to save page to safe_place_pages:",
+                    error.message,
+                    "| code:",
+                    error.code,
+                    "| details:",
+                    error.details,
+                    "| hint:",
+                    error.hint,
+                )
+                setSaveError(
+                    error.message
+                        ? `Could not save to the database: ${error.message}`
+                        : "Could not save this page to the database. Please try again.",
+                )
+                setSaving(false)
+                return // keep the confirmation open so the failure is visible
+            }
+
+            console.log("[v0] Saved page to safe_place_pages:", data)
+
+            // Reload straight from Supabase (source of truth).
+            await loadPages()
+            setSaving(false)
+            setSelectedPage(0)
+            closeAfterSave()
+            return
+        }
+
+        // Fallback path: Supabase not configured — keep the app usable locally but
+        // make it explicit that the write did NOT reach the database.
+        console.warn(
+            "[v0] Supabase not configured — page saved to local storage only, NOT inserted into safe_place_pages.",
+        )
         const nextPages = editId
             ? pages.map((page) => (page.id === editId ? pageData : page))
             : [...pages, pageData]
-
         setPages(nextPages)
         saveToStorage(nextPages)
-
-        if (supabaseConfigured && user?.id) {
-            const payload = mapPageToDb({
-                ...pageData,
-                userId: user.id,
-            })
-
-            if (editId) {
-                await supabase.from("safe_place_pages").update(payload).eq("id", editId)
-            } else {
-                await supabase.from("safe_place_pages").insert(payload)
-            }
-        }
-
-        resetDraft()
-        setShowConfirm(false)
-        setBookOpen(false)
-        setShowWriterName(true)
-        setSelectedPage(Math.max(nextPages.length - 1, 0))
+        setSaving(false)
+        setSaveError(
+            "Database not connected (missing Supabase environment variables), so this page was saved locally only and will not sync.",
+        )
     }
 
     const handleDelete = async (pageId: string) => {
@@ -372,8 +432,13 @@ export function SafePlaceBook() {
         setPages(nextPages)
         saveToStorage(nextPages)
 
-        if (supabaseConfigured && user?.id) {
-            await supabase.from("safe_place_pages").delete().eq("id", pageId)
+        if (supabaseConfigured) {
+            const { error } = await supabase.from("safe_place_pages").delete().eq("id", pageId)
+            if (error) {
+                console.error("[v0] Failed to delete page from safe_place_pages:", error.message, "| code:", error.code)
+            } else {
+                await loadPages()
+            }
         }
 
         if (selectedPage >= filteredPages.length - 1) {
@@ -397,10 +462,24 @@ export function SafePlaceBook() {
         })
     }
 
-    const handleToggleFavorite = (pageId: string) => {
-        const nextPages = pages.map((page) => (page.id === pageId ? { ...page, favorite: !page.favorite } : page))
+    const handleToggleFavorite = async (pageId: string) => {
+        const target = pages.find((page) => page.id === pageId)
+        if (!target) return
+        const nextFavorite = !target.favorite
+
+        const nextPages = pages.map((page) => (page.id === pageId ? { ...page, favorite: nextFavorite } : page))
         setPages(nextPages)
         saveToStorage(nextPages)
+
+        if (supabaseConfigured) {
+            const { error } = await supabase
+                .from("safe_place_pages")
+                .update({ favorite: nextFavorite, updated_at: new Date().toISOString() })
+                .eq("id", pageId)
+            if (error) {
+                console.error("[v0] Failed to update favorite in safe_place_pages:", error.message, "| code:", error.code)
+            }
+        }
     }
 
     const handleReply = async (pageId: string) => {
@@ -422,12 +501,7 @@ export function SafePlaceBook() {
         saveToStorage(nextPages)
         setReplyDraft("")
 
-        if (supabaseConfigured && user?.id) {
-            await supabase
-                .from("safe_place_pages")
-                .update({ conversation: nextConversation, updated_at: new Date().toISOString() })
-                .eq("id", pageId)
-        }
+        await persistConversation(pageId, nextConversation)
     }
 
     const persistConversation = async (
@@ -435,11 +509,19 @@ export function SafePlaceBook() {
         conversation: SafePlacePage["conversation"],
         extra: Record<string, unknown> = {},
     ) => {
-        if (supabaseConfigured && user?.id) {
-            await supabase
+        if (supabaseConfigured) {
+            const { error } = await supabase
                 .from("safe_place_pages")
                 .update({ conversation, updated_at: new Date().toISOString(), ...extra })
                 .eq("id", pageId)
+            if (error) {
+                console.error(
+                    "[v0] Failed to persist conversation to safe_place_pages:",
+                    error.message,
+                    "| code:",
+                    error.code,
+                )
+            }
         }
     }
 
@@ -772,7 +854,10 @@ export function SafePlaceBook() {
 
                                     <div className="mt-5 flex flex-wrap gap-3">
                                         <Button
-                                            onClick={() => setShowConfirm(true)}
+                                            onClick={() => {
+                                                setSaveError(null)
+                                                setShowConfirm(true)
+                                            }}
                                             className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
                                             disabled={!draft.writerName.trim() || !draft.message.trim()}
                                         >
@@ -819,10 +904,23 @@ export function SafePlaceBook() {
                             </p>
                         </div>
 
+                        {saveError && (
+                            <p
+                                role="alert"
+                                className="mt-4 rounded-xl border border-[oklch(0.6_0.18_25)]/40 bg-[oklch(0.95_0.05_25)] px-4 py-3 text-sm text-[oklch(0.4_0.15_25)]"
+                            >
+                                {saveError}
+                            </p>
+                        )}
+
                         <div className="mt-6 flex flex-wrap justify-end gap-3">
                             <Button
                                 variant="outline"
-                                onClick={() => setShowConfirm(false)}
+                                onClick={() => {
+                                    setSaveError(null)
+                                    setShowConfirm(false)
+                                }}
+                                disabled={saving}
                                 className="rounded-full border-[var(--champagne-deep)]/50 bg-white/70 px-6 py-2.5 text-sm font-medium"
                             >
                                 <PencilLine className="mr-2 size-4" />
@@ -830,10 +928,11 @@ export function SafePlaceBook() {
                             </Button>
                             <Button
                                 onClick={handleSavePage}
-                                className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
+                                disabled={saving}
+                                className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
                             >
                                 <Heart className="mr-2 size-4 fill-current" />
-                                Send With Love
+                                {saving ? "Saving..." : "Send With Love"}
                             </Button>
                         </div>
                     </div>
