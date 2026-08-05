@@ -326,6 +326,71 @@
   animation: lightbox-zoom-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* ── Resolution celebration: rose petals + golden seal ──── */
+@keyframes petal-fall {
+  0% {
+    transform: translateY(-10%) rotate(0deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(320px) rotate(320deg);
+    opacity: 0;
+  }
+}
+
+.petal {
+  position: absolute;
+  top: -10%;
+  font-size: 1.25rem;
+  animation-name: petal-fall;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+}
+
+@keyframes seal-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes heart-mend {
+  0% {
+    transform: scale(0.9);
+  }
+
+  40% {
+    transform: scale(1.18);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.golden-seal {
+  animation: seal-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.resolved-celebrate .text-4xl {
+  display: inline-block;
+  animation: heart-mend 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .safe-book-shell {
   perspective: 1600px;
 }
@@ -358,10 +423,17 @@
   .reveal-stagger>*,
   .lightbox-backdrop,
   .lightbox-image,
+  .petal,
+  .golden-seal,
+  .resolved-celebrate .text-4xl,
   .safe-book-shell * {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .petal {
+    display: none !important;
   }
 
   * {

@@ -9,7 +9,6 @@ import {
     HeartHandshake,
     PencilLine,
     Search,
-    ShieldCheck,
     Sparkles,
     Trash2,
     WandSparkles,
@@ -93,6 +92,48 @@ const EMPTY_DRAFT: DraftState = {
 const STORAGE_KEY = "safe-place-pages"
 const SHARED_STORAGE_KEY = `${STORAGE_KEY}:shared`
 
+const DEDICATION = "This book belongs to two hearts... May every page bring us closer than the one before."
+
+const READING_INVITATION = "Every feeling deserves to be understood before it's answered."
+
+// Sentinel stored inside the conversation JSON so we can track "Do you feel
+// understood?" votes without needing a new database column.
+const UNDERSTOOD_MARK = "__UNDERSTOOD__"
+
+const UNDERSTANDING_QUOTES = [
+    "To love someone is to see them clearly and stay anyway.",
+    "Understanding is the quietest, deepest form of love.",
+    "The best relationships are built on the courage to listen.",
+    "Being heard is so close to being loved that most people cannot tell the difference.",
+    "Love grows where two people choose to understand instead of to win.",
+    "Peace begins the moment we listen with the heart, not the ego.",
+]
+
+function understandingVotes(page: SafePlacePage) {
+    return page.conversation.filter((entry) => entry.text === UNDERSTOOD_MARK)
+}
+
+function distinctUnderstanders(page: SafePlacePage) {
+    return new Set(understandingVotes(page).map((entry) => entry.speaker)).size
+}
+
+function visibleConversation(page: SafePlacePage) {
+    return page.conversation.filter((entry) => entry.text !== UNDERSTOOD_MARK)
+}
+
+function statusStyle(status: string) {
+    switch (status) {
+        case "Resolved With Love":
+            return "border-[var(--rose-gold)] bg-[var(--rose-gold)]/15 text-[var(--rose-gold)]"
+        case "Waiting for Other Person":
+            return "border-[var(--champagne-deep)]/60 bg-[var(--champagne)]/40 text-[oklch(0.45_0.09_60)]"
+        case "Discussion in Progress":
+            return "border-[var(--blush-deep)]/60 bg-[var(--blush)]/60 text-[oklch(0.45_0.09_20)]"
+        default:
+            return "border-[var(--champagne-deep)]/50 bg-white/70 text-[oklch(0.45_0.06_25)]"
+    }
+}
+
 function createPageId() {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
         return crypto.randomUUID()
@@ -160,6 +201,10 @@ export function SafePlaceBook() {
     const [editId, setEditId] = useState<string | null>(null)
     const [replyDraft, setReplyDraft] = useState("")
     const [selectedPage, setSelectedPage] = useState<number>(0)
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [replyUnlocked, setReplyUnlocked] = useState(false)
+    const [celebrateId, setCelebrateId] = useState<string | null>(null)
+    const [resolveQuote, setResolveQuote] = useState("")
     const touchStartX = useRef<number | null>(null)
     const touchEndX = useRef<number | null>(null)
 
@@ -203,6 +248,32 @@ export function SafePlaceBook() {
     useEffect(() => {
         loadPages()
     }, [loadPages])
+
+    // Real-time sync: when either linked partner writes, replies, or resolves a
+    // page, refresh the shared book on every device instantly.
+    useEffect(() => {
+        if (!supabaseConfigured) return
+
+        const channel = supabase
+            .channel("safe-place-pages-realtime")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "safe_place_pages" },
+                () => {
+                    loadPages()
+                },
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [loadPages])
+
+    // Reset the reading gate whenever the reader turns to a different page.
+    useEffect(() => {
+        setReplyUnlocked(false)
+    }, [selectedPage, activeFilter, search])
 
     const filteredPages = useMemo(() => {
         const searchValue = search.trim().toLowerCase()
@@ -287,6 +358,7 @@ export function SafePlaceBook() {
         }
 
         resetDraft()
+        setShowConfirm(false)
         setBookOpen(false)
         setShowWriterName(true)
         setSelectedPage(Math.max(nextPages.length - 1, 0))
@@ -358,19 +430,80 @@ export function SafePlaceBook() {
         }
     }
 
-    const handleResolve = async (pageId: string) => {
-        const nextPages = pages.map((page) =>
-            page.id === pageId ? { ...page, resolved: true, status: "Resolved With Love" } : page,
-        )
-        setPages(nextPages)
-        saveToStorage(nextPages)
-
+    const persistConversation = async (
+        pageId: string,
+        conversation: SafePlacePage["conversation"],
+        extra: Record<string, unknown> = {},
+    ) => {
         if (supabaseConfigured && user?.id) {
             await supabase
                 .from("safe_place_pages")
-                .update({ resolved: true, status: "Resolved With Love", updated_at: new Date().toISOString() })
+                .update({ conversation, updated_at: new Date().toISOString(), ...extra })
                 .eq("id", pageId)
         }
+    }
+
+    const handleUnderstood = async (pageId: string) => {
+        const page = pages.find((item) => item.id === pageId)
+        if (!page) return
+
+        const voterId = user?.id ?? "guest"
+        // One vote per person — don't double count the same reader.
+        if (understandingVotes(page).some((entry) => entry.speaker === voterId)) return
+
+        const nextConversation = [
+            ...page.conversation,
+            { speaker: voterId, text: UNDERSTOOD_MARK, createdAt: new Date().toISOString() },
+        ]
+
+        const bothUnderstood =
+            new Set(
+                nextConversation
+                    .filter((entry) => entry.text === UNDERSTOOD_MARK)
+                    .map((entry) => entry.speaker),
+            ).size >= 2
+
+        const resolvedNow = bothUnderstood
+        const nextStatus = resolvedNow ? "Resolved With Love" : "Waiting for Other Person"
+
+        const nextPages = pages.map((item) =>
+            item.id === pageId
+                ? { ...item, conversation: nextConversation, resolved: resolvedNow, status: nextStatus }
+                : item,
+        )
+
+        setPages(nextPages)
+        saveToStorage(nextPages)
+
+        if (resolvedNow) {
+            setResolveQuote(UNDERSTANDING_QUOTES[Math.floor(Math.random() * UNDERSTANDING_QUOTES.length)])
+            setCelebrateId(pageId)
+            window.setTimeout(() => setCelebrateId(null), 6000)
+        }
+
+        await persistConversation(pageId, nextConversation, { resolved: resolvedNow, status: nextStatus })
+    }
+
+    const handleNotYet = async (pageId: string) => {
+        const page = pages.find((item) => item.id === pageId)
+        if (!page) return
+
+        const voterId = user?.id ?? "guest"
+        // Withdraw this reader's vote and reopen the discussion.
+        const nextConversation = page.conversation.filter(
+            (entry) => !(entry.text === UNDERSTOOD_MARK && entry.speaker === voterId),
+        )
+
+        const nextPages = pages.map((item) =>
+            item.id === pageId
+                ? { ...item, conversation: nextConversation, resolved: false, status: "Discussion in Progress" }
+                : item,
+        )
+
+        setPages(nextPages)
+        saveToStorage(nextPages)
+
+        await persistConversation(pageId, nextConversation, { resolved: false, status: "Discussion in Progress" })
     }
 
     const pageTurn = () => {
@@ -428,6 +561,18 @@ export function SafePlaceBook() {
                     <Heart className="mr-2 size-4 fill-current" />
                     Open Our Safe Place
                 </Button>
+            </div>
+
+            <div className="mx-auto mb-10 max-w-2xl sm:mb-14">
+                <div className="relative overflow-hidden rounded-[2rem] border border-[var(--rose-gold)]/40 bg-[linear-gradient(160deg,rgba(255,255,255,0.9),rgba(247,234,232,0.94))] px-7 py-10 text-center shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]">
+                    <div className="pointer-events-none absolute inset-0 rounded-[2rem] border border-white/60" aria-hidden="true" />
+                    <BookHeart className="mx-auto mb-4 size-7 text-[var(--rose-gold)]" />
+                    <p className="text-xs uppercase tracking-[0.32em] text-[var(--rose-gold)]">Dedication</p>
+                    <p className="mx-auto mt-4 max-w-md text-balance font-serif text-2xl leading-relaxed text-black sm:text-[1.75rem]">
+                        {DEDICATION}
+                    </p>
+                    <div className="mt-5 text-xl text-[var(--rose-gold)]">khaled <span className="mx-1.5">❤</span> amyy</div>
+                </div>
             </div>
 
             {bookOpen && (
@@ -627,7 +772,7 @@ export function SafePlaceBook() {
 
                                     <div className="mt-5 flex flex-wrap gap-3">
                                         <Button
-                                            onClick={handleSavePage}
+                                            onClick={() => setShowConfirm(true)}
                                             className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
                                             disabled={!draft.writerName.trim() || !draft.message.trim()}
                                         >
@@ -643,6 +788,53 @@ export function SafePlaceBook() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showConfirm && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-lg rounded-[2rem] border border-[var(--rose-gold)]/40 bg-[linear-gradient(160deg,rgba(255,255,255,0.97),rgba(247,235,233,0.98))] p-7 shadow-[0_28px_70px_-28px_rgba(0,0,0,0.5)]">
+                        <div className="mb-4 flex items-center gap-2 text-sm font-medium text-[var(--rose-gold)]">
+                            <Heart className="size-4 fill-current" />
+                            Before You Send
+                        </div>
+                        <p className="text-sm leading-relaxed text-black">
+                            Take a breath, {draft.writerName.trim() || "love"}. These words will live on our page forever. Are they
+                            what your heart truly wants to say?
+                        </p>
+
+                        <div className="mt-4 grid gap-3 rounded-2xl border border-[var(--champagne-deep)]/40 bg-white/75 p-4 text-sm text-black">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                <span><strong>From:</strong> {draft.writerName.trim() || "—"}</span>
+                                <span><strong>Mood:</strong> {draft.emotion}</span>
+                                <span><strong>Severity:</strong> {getSeverityDisplay(draft.severity)}</span>
+                            </div>
+                            {draft.needs.length > 0 && (
+                                <div><strong>Needs:</strong> {draft.needs.join(", ")}</div>
+                            )}
+                            <p className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl bg-[var(--soft-beige)] p-3 leading-relaxed">
+                                {draft.message.trim() || "…"}
+                            </p>
+                        </div>
+
+                        <div className="mt-6 flex flex-wrap justify-end gap-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowConfirm(false)}
+                                className="rounded-full border-[var(--champagne-deep)]/50 bg-white/70 px-6 py-2.5 text-sm font-medium"
+                            >
+                                <PencilLine className="mr-2 size-4" />
+                                Edit
+                            </Button>
+                            <Button
+                                onClick={handleSavePage}
+                                className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
+                            >
+                                <Heart className="mr-2 size-4 fill-current" />
+                                Send With Love
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -739,6 +931,12 @@ export function SafePlaceBook() {
                                         <div className="sm:col-span-2"><strong>Needs:</strong> {selectedPageData.needs.join(", ") || "—"}</div>
                                     </div>
 
+                                    <div className="mt-3">
+                                        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium", statusStyle(selectedPageData.status))}>
+                                            {selectedPageData.resolved ? "❤️" : "🤍"} {selectedPageData.status}
+                                        </span>
+                                    </div>
+
                                     <div className="mt-5 rounded-[1.5rem] bg-white/85 p-4 shadow-sm">
                                         <p className="whitespace-pre-wrap leading-relaxed text-black">{selectedPageData.message}</p>
                                     </div>
@@ -749,29 +947,113 @@ export function SafePlaceBook() {
                                             Conversation
                                         </div>
                                         <div className="space-y-3">
-                                            {selectedPageData.conversation.map((entry, index) => (
+                                            {visibleConversation(selectedPageData).map((entry, index) => (
                                                 <div key={`${entry.createdAt}-${index}`} className="rounded-xl bg-[var(--soft-beige)] px-3 py-2">
-                                                    <div className="text-xs uppercase tracking-[0.2em] text-[var(--rose-gold)]">{entry.speaker}</div>
+                                                    <div className="flex items-center justify-between gap-2 text-xs uppercase tracking-[0.2em] text-[var(--rose-gold)]">
+                                                        <span>{entry.speaker}</span>
+                                                        <span className="tracking-normal text-[oklch(0.55_0.03_25)]">
+                                                            {new Date(entry.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                                                        </span>
+                                                    </div>
                                                     <p className="mt-1 text-sm leading-relaxed text-black">{entry.text}</p>
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="mt-3 flex gap-2">
-                                            <textarea
-                                                rows={2}
-                                                value={replyDraft}
-                                                onChange={(e) => setReplyDraft(e.target.value)}
-                                                placeholder="Reply inside this page"
-                                                className="flex-1 rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm text-black outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
-                                            />
-                                            <Button
-                                                onClick={() => handleReply(selectedPageData.id)}
-                                                className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
-                                            >
-                                                Reply
-                                            </Button>
-                                        </div>
+
+                                        {replyUnlocked ? (
+                                            <div className="mt-3 flex gap-2">
+                                                <textarea
+                                                    rows={2}
+                                                    value={replyDraft}
+                                                    onChange={(e) => setReplyDraft(e.target.value)}
+                                                    placeholder="Reply inside this page"
+                                                    className="flex-1 rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm text-black outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                />
+                                                <Button
+                                                    onClick={() => handleReply(selectedPageData.id)}
+                                                    className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+                                                >
+                                                    Reply
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-4 rounded-2xl border border-dashed border-[var(--rose-gold)]/50 bg-[var(--blush)]/40 px-4 py-5 text-center">
+                                                <p className="mx-auto max-w-md text-pretty font-serif text-lg italic leading-relaxed text-black">
+                                                    &ldquo;{READING_INVITATION}&rdquo;
+                                                </p>
+                                                <Button
+                                                    onClick={() => setReplyUnlocked(true)}
+                                                    className="mt-4 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground"
+                                                >
+                                                    <Heart className="mr-2 size-4 fill-current" />
+                                                    I&apos;ve listened — let me reply
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
+
+                                    {/* Do you feel understood? — resolves only when BOTH hearts agree */}
+                                    {selectedPageData.resolved ? (
+                                        <div className={cn(
+                                            "relative mt-5 overflow-hidden rounded-[1.5rem] border border-[var(--rose-gold)]/50 bg-[linear-gradient(160deg,rgba(255,246,244,0.95),rgba(247,232,229,0.97))] p-6 text-center",
+                                            celebrateId === selectedPageData.id && "resolved-celebrate",
+                                        )}>
+                                            {celebrateId === selectedPageData.id && (
+                                                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                                                    {Array.from({ length: 18 }).map((_, index) => (
+                                                        <span
+                                                            key={`petal-${index}`}
+                                                            className="petal"
+                                                            style={{
+                                                                left: `${(index * 5.5) % 100}%`,
+                                                                animationDelay: `${(index % 6) * 0.35}s`,
+                                                                animationDuration: `${4 + (index % 4)}s`,
+                                                            }}
+                                                        >
+                                                            🌹
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div className="relative">
+                                                <div className="text-4xl">❤️</div>
+                                                <div className="golden-seal mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--rose-gold)] bg-[linear-gradient(120deg,var(--champagne),var(--rose-gold))] px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_30px_-12px_rgba(0,0,0,0.4)]">
+                                                    <Sparkles className="size-4" />
+                                                    Resolved With Love ❤️
+                                                </div>
+                                                {resolveQuote && (
+                                                    <p className="mx-auto mt-4 max-w-md text-pretty font-serif text-lg italic leading-relaxed text-black">
+                                                        &ldquo;{resolveQuote}&rdquo;
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-5 rounded-[1.5rem] border border-[var(--champagne-deep)]/40 bg-white/80 p-5 text-center">
+                                            <div className="mb-1 text-3xl">💔</div>
+                                            <h4 className="font-serif text-xl text-black">Do you feel understood?</h4>
+                                            <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-[oklch(0.45_0.04_25)]">
+                                                The broken heart becomes whole only when both of you choose Yes.
+                                                {distinctUnderstanders(selectedPageData) === 1 && " One heart is already waiting…"}
+                                            </p>
+                                            <div className="mt-4 flex flex-wrap justify-center gap-3">
+                                                <Button
+                                                    onClick={() => handleUnderstood(selectedPageData.id)}
+                                                    disabled={understandingVotes(selectedPageData).some((v) => v.speaker === (user?.id ?? "guest"))}
+                                                    className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                                                >
+                                                    Yes ❤️
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => handleNotYet(selectedPageData.id)}
+                                                    className="rounded-full border-[var(--champagne-deep)]/50 bg-white/70 px-6 py-2.5 text-sm font-medium"
+                                                >
+                                                    Not Yet 🤍
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="mt-5 flex flex-wrap gap-2">
                                         <Button onClick={() => handleStartEdit(selectedPageData)} className="rounded-full bg-[var(--blush)] px-4 py-2 text-sm font-medium text-foreground">
@@ -785,12 +1067,6 @@ export function SafePlaceBook() {
                                         <Button onClick={() => handleToggleFavorite(selectedPageData.id)} variant="outline" className="rounded-full border-[var(--champagne-deep)]/50 bg-white/80 px-4 py-2 text-sm font-medium">
                                             {selectedPageData.favorite ? "★ Favorite" : "☆ Favorite"}
                                         </Button>
-                                        {!selectedPageData.resolved && (
-                                            <Button onClick={() => handleResolve(selectedPageData.id)} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-black">
-                                                <ShieldCheck className="mr-2 size-4" />
-                                                Resolve with love
-                                            </Button>
-                                        )}
                                     </div>
                                 </article>
                             )}
