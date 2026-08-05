@@ -19,8 +19,13 @@ export function LoginForm() {
 
     try {
       const { error } = await signIn(email, password)
-      console.log("[v0] signIn result error:", error)
-      if (error) setError(error.message || "Invalid email or password. Please try again.")
+      if (error) {
+        if (error.message?.toLowerCase().includes("fetch")) {
+          setError("Network error — please open the app in a real browser tab instead of the preview.")
+        } else {
+          setError("Invalid email or password. Please try again.")
+        }
+      }
     } finally {
       setLoading(false)
     }
