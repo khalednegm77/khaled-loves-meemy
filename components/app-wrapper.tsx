@@ -2,43 +2,23 @@
 
 import { useAuth } from "./auth-context"
 import { LoginForm } from "./login-form"
-import { LoveLetterEnvelope } from "./love-letter-envelope"
 import { Hero } from "./hero"
 import { LoveCounter } from "./love-counter"
 import { AnniversaryCountdown } from "./anniversary-countdown"
 import { Gallery } from "./gallery"
+import { SafePlaceBook } from "./safe-place-book"
 import { Videos } from "./videos"
 import { Reasons } from "./reasons"
 import { LoveLetterSection } from "./love-letter-section"
 import { OurTimeline } from "./our-timeline"
 import { BucketListSection } from "./bucket-list-section"
-import { SafePlaceBook } from "./safe-place-book"
 import { Closing } from "./closing"
 import { DayLikeToday } from "./day-like-today"
 import { ContentEditorButton } from "./content-editor-modal"
-import { useState, useEffect } from "react"
 import { LogOut } from "lucide-react"
 
 export function AppWrapper() {
   const { user, loading, signOut } = useAuth()
-  const [showEnvelope, setShowEnvelope] = useState(false)
-  const [envelopeOpened, setEnvelopeOpened] = useState(false)
-
-  useEffect(() => {
-    if (user && !envelopeOpened) {
-      const seenEnvelope = sessionStorage.getItem("envelopeOpened")
-      if (seenEnvelope) {
-        setEnvelopeOpened(true)
-      } else {
-        setShowEnvelope(true)
-      }
-    }
-  }, [user, envelopeOpened])
-
-  const handleEnvelopeOpen = () => {
-    sessionStorage.setItem("envelopeOpened", "true")
-    setEnvelopeOpened(true)
-  }
 
   if (loading) {
     return (
@@ -50,10 +30,6 @@ export function AppWrapper() {
 
   if (!user) return <LoginForm />
 
-  if (showEnvelope && !envelopeOpened) {
-    return <LoveLetterEnvelope onOpen={handleEnvelopeOpen} />
-  }
-
   return (
     <>
       <main className="min-h-screen bg-background">
@@ -61,12 +37,12 @@ export function AppWrapper() {
         <LoveCounter />
         <AnniversaryCountdown />
         <Gallery />
-        <SafePlaceBook />
         <Videos />
         <Reasons />
         <LoveLetterSection />
         <OurTimeline />
         <BucketListSection />
+        <SafePlaceBook />
         <Closing />
       </main>
 
