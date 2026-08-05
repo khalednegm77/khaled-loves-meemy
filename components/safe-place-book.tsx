@@ -426,8 +426,8 @@ export function SafePlaceBook() {
         >
             <div className="mb-10 text-center sm:mb-14">
                 <p className="mb-3 text-xs uppercase tracking-[0.3em] text-[var(--rose-gold)] sm:text-sm">A safe space for us</p>
-                <h2 className="text-balance font-serif text-3xl font-semibold text-black sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
-                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-black">
+                <h2 className="text-balance font-serif text-3xl font-semibold text-white sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
+                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-white">
                     Sometimes love isn&apos;t about never making mistakes. It&apos;s about having the courage to talk, the patience to listen,
                     and the love to understand. Every feeling is welcome here.
                 </p>
