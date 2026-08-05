@@ -171,7 +171,11 @@ export function SafePlaceBook() {
     }, [])
 
     const loadPages = useCallback(async () => {
-        if (supabaseConfigured) {
+        console.log("supabaseConfigured =", supabaseConfigured)
+console.log("Supabase URL =", process.env.NEXT_PUBLIC_SUPABASE_URL)
+console.log("Has anon key =", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+if (supabaseConfigured) {
             const { data, error } = await supabase
                 .from("safe_place_pages")
                 .select("*")
