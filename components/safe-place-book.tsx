@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth-context"
-import { supabase, getSupabaseConfigured } from "@/lib/supabase-client"
+import { supabase, supabaseConfigured } from "@/lib/supabase-client"
 import { useReveal } from "@/lib/use-reveal"
 
 type SafePlacePage = {
@@ -218,7 +218,7 @@ export function SafePlaceBook() {
     }, [])
 
     const loadPages = useCallback(async () => {
-        if (getSupabaseConfigured()) {
+        if (supabaseConfigured) {
             const { data, error } = await supabase
                 .from("safe_place_pages")
                 .select("*")
@@ -270,7 +270,7 @@ export function SafePlaceBook() {
     // Real-time sync: when either linked partner writes, replies, or resolves a
     // page, refresh the shared book on every device instantly.
     useEffect(() => {
-        if (!getSupabaseConfigured()) return
+        if (!supabaseConfigured) return
 
         const channel = supabase
             .channel("safe-place-pages-realtime")
@@ -378,7 +378,7 @@ export function SafePlaceBook() {
 
         // Primary path: persist to Supabase and READ BACK from the database so the
         // UI reflects what is actually stored, not optimistic local state.
-        if (getSupabaseConfigured()) {
+        if (supabaseConfigured) {
             const payload = mapPageToDb({
                 ...pageData,
                 userId: user?.id ?? pageData.userId,
@@ -439,7 +439,7 @@ export function SafePlaceBook() {
         setPages(nextPages)
         saveToStorage(nextPages)
 
-        if (getSupabaseConfigured()) {
+        if (supabaseConfigured) {
             const { error } = await supabase.from("safe_place_pages").delete().eq("id", pageId)
             if (error) {
                 console.error("[v0] Failed to delete page from safe_place_pages:", error.message, "| code:", error.code)
@@ -478,7 +478,7 @@ export function SafePlaceBook() {
         setPages(nextPages)
         saveToStorage(nextPages)
 
-        if (getSupabaseConfigured()) {
+        if (supabaseConfigured) {
             const { error } = await supabase
                 .from("safe_place_pages")
                 .update({ favorite: nextFavorite, updated_at: new Date().toISOString() })
@@ -516,7 +516,7 @@ export function SafePlaceBook() {
         conversation: SafePlacePage["conversation"],
         extra: Record<string, unknown> = {},
     ) => {
-        if (getSupabaseConfigured()) {
+        if (supabaseConfigured) {
             const { error } = await supabase
                 .from("safe_place_pages")
                 .update({ conversation, updated_at: new Date().toISOString(), ...extra })
