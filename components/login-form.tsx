@@ -19,7 +19,8 @@ export function LoginForm() {
 
     try {
       const { error } = await signIn(email, password)
-      if (error) setError("Invalid email or password. Please try again.")
+      console.log("[v0] signIn result error:", error)
+      if (error) setError(error.message || "Invalid email or password. Please try again.")
     } finally {
       setLoading(false)
     }
