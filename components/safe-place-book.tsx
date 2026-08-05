@@ -93,6 +93,10 @@ const EMPTY_DRAFT: DraftState = {
 const STORAGE_KEY = "safe-place-pages"
 const SHARED_STORAGE_KEY = `${STORAGE_KEY}:shared`
 
+function getUserStorageKey(userId?: string) {
+    return userId ? `${SHARED_STORAGE_KEY}:${userId}` : SHARED_STORAGE_KEY
+}
+
 function createPageId() {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
         return crypto.randomUUID()
@@ -167,18 +171,20 @@ export function SafePlaceBook() {
 
     const saveToStorage = useCallback((nextPages: SafePlacePage[]) => {
         if (typeof window === "undefined") return
-        window.localStorage.setItem(SHARED_STORAGE_KEY, JSON.stringify(nextPages))
-    }, [])
+        window.localStorage.setItem(getUserStorageKey(user?.id), JSON.stringify(nextPages))
+    }, [user?.id])
 
     const loadPages = useCallback(async () => {
-        console.log("supabaseConfigured =", supabaseConfigured)
-console.log("Supabase URL =", process.env.NEXT_PUBLIC_SUPABASE_URL)
-console.log("Has anon key =", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+        if (!user?.id) {
+            setPages([])
+            return
+        }
 
-if (supabaseConfigured) {
+        if (supabaseConfigured) {
             const { data, error } = await supabase
                 .from("safe_place_pages")
                 .select("*")
+                .eq("user_id", user.id)
                 .order("created_at", { ascending: true })
 
             if (!error && data) {
@@ -190,7 +196,7 @@ if (supabaseConfigured) {
         }
 
         if (typeof window !== "undefined") {
-            const raw = window.localStorage.getItem(SHARED_STORAGE_KEY)
+            const raw = window.localStorage.getItem(getUserStorageKey(user.id))
             if (raw) {
                 try {
                     setPages(JSON.parse(raw) as SafePlacePage[])
@@ -202,7 +208,7 @@ if (supabaseConfigured) {
         }
 
         setPages([])
-    }, [saveToStorage, user?.id])
+    }, [saveToStorage, user?.id, user?.id])
 
     useEffect(() => {
         loadPages()
@@ -420,8 +426,8 @@ if (supabaseConfigured) {
         >
             <div className="mb-10 text-center sm:mb-14">
                 <p className="mb-3 text-xs uppercase tracking-[0.3em] text-[var(--rose-gold)] sm:text-sm">A safe space for us</p>
-                <h2 className="text-balance font-serif text-3xl font-semibold text-white sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
-                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-white">
+                <h2 className="text-balance font-serif text-3xl font-semibold text-black sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
+                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-black">
                     Sometimes love isn&apos;t about never making mistakes. It&apos;s about having the courage to talk, the patience to listen,
                     and the love to understand. Every feeling is welcome here.
                 </p>
@@ -766,7 +772,7 @@ if (supabaseConfigured) {
                                                 value={replyDraft}
                                                 onChange={(e) => setReplyDraft(e.target.value)}
                                                 placeholder="Reply inside this page"
-                                                className="flex-1 rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm text-black outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                className="flex-1 rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
                                             />
                                             <Button
                                                 onClick={() => handleReply(selectedPageData.id)}
@@ -790,7 +796,7 @@ if (supabaseConfigured) {
                                             {selectedPageData.favorite ? "★ Favorite" : "☆ Favorite"}
                                         </Button>
                                         {!selectedPageData.resolved && (
-                                            <Button onClick={() => handleResolve(selectedPageData.id)} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-black">
+                                            <Button onClick={() => handleResolve(selectedPageData.id)} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
                                                 <ShieldCheck className="mr-2 size-4" />
                                                 Resolve with love
                                             </Button>
