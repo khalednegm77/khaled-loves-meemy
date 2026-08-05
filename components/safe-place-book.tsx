@@ -277,10 +277,20 @@ export function SafePlaceBook() {
             .on(
                 "postgres_changes",
                 { event: "*", schema: "public", table: "safe_place_pages" },
-                () => {
+                (payload) => {
+                    console.log("[v0] Real-time update received:", payload.eventType, payload.new)
                     loadPages()
                 },
             )
+            .on("subscribe", () => {
+                console.log("[v0] Real-time subscription connected")
+            })
+            .on("unsubscribe", () => {
+                console.log("[v0] Real-time subscription disconnected")
+            })
+            .on("error", (err) => {
+                console.error("[v0] Real-time subscription error:", err)
+            })
             .subscribe()
 
         return () => {
@@ -379,14 +389,13 @@ export function SafePlaceBook() {
                 : await supabase.from("safe_place_pages").insert(payload).select()
 
             if (error) {
-                console.error("[v0] SUPABASE INSERT ERROR (full object):", error)
-                console.error("[v0] error.message:", error.message)
-                console.error("[v0] error.code:", error.code)
-                console.error("[v0] error.details:", error.details)
-                console.error("[v0] error.hint:", error.hint)
-                console.error("[v0] error.status:", error.status)
-                console.error("[v0] error.statusText:", error.statusText)
-                console.error("[v0] Payload that was sent:", JSON.stringify(payload, null, 2))
+                console.error("[v0] Failed to save page to safe_place_pages:", {
+                    message: error.message,
+                    code: error.code,
+                    details: error.details,
+                    hint: error.hint,
+                    status: error.status,
+                })
                 setSaveError(
                     error.message
                         ? `Could not save to the database: ${error.message}`
