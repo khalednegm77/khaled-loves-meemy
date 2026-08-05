@@ -91,6 +91,7 @@ const EMPTY_DRAFT: DraftState = {
 }
 
 const STORAGE_KEY = "safe-place-pages"
+const SHARED_STORAGE_KEY = `${STORAGE_KEY}:shared`
 
 function createPageId() {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -166,9 +167,8 @@ export function SafePlaceBook() {
 
     const saveToStorage = useCallback((nextPages: SafePlacePage[]) => {
         if (typeof window === "undefined") return
-        const storageKey = `${STORAGE_KEY}:${user?.id ?? "guest"}`
-        window.localStorage.setItem(storageKey, JSON.stringify(nextPages))
-    }, [user?.id])
+        window.localStorage.setItem(SHARED_STORAGE_KEY, JSON.stringify(nextPages))
+    }, [])
 
     const loadPages = useCallback(async () => {
         if (!user?.id) {
@@ -180,7 +180,6 @@ export function SafePlaceBook() {
             const { data, error } = await supabase
                 .from("safe_place_pages")
                 .select("*")
-                .eq("user_id", user.id)
                 .order("created_at", { ascending: true })
 
             if (!error && data) {
@@ -192,7 +191,7 @@ export function SafePlaceBook() {
         }
 
         if (typeof window !== "undefined") {
-            const raw = window.localStorage.getItem(`${STORAGE_KEY}:${user.id}`)
+            const raw = window.localStorage.getItem(SHARED_STORAGE_KEY)
             if (raw) {
                 try {
                     setPages(JSON.parse(raw) as SafePlacePage[])
@@ -419,8 +418,8 @@ export function SafePlaceBook() {
         >
             <div className="mb-10 text-center sm:mb-14">
                 <p className="mb-3 text-xs uppercase tracking-[0.3em] text-[var(--rose-gold)] sm:text-sm">A safe space for us</p>
-                <h2 className="text-balance font-serif text-3xl font-semibold text-foreground sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
-                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-muted-foreground">
+                <h2 className="text-balance font-serif text-3xl font-semibold text-black sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
+                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-black">
                     Sometimes love isn&apos;t about never making mistakes. It&apos;s about having the courage to talk, the patience to listen,
                     and the love to understand. Every feeling is welcome here.
                 </p>
@@ -484,24 +483,24 @@ export function SafePlaceBook() {
                                     </div>
 
                                     <div className="rounded-[1.25rem] border border-[var(--champagne-deep)]/40 bg-white/70 p-4 shadow-sm">
-                                        <h3 className="font-serif text-2xl text-foreground">{showWriterName ? "Who is writing today?" : "Welcome, your heart"}</h3>
-                                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{firstSentence}</p>
+                                        <h3 className="font-serif text-2xl text-black">{showWriterName ? "Who is writing today?" : "Welcome, your heart"}</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-black">{firstSentence}</p>
                                     </div>
 
                                     <div className="mt-5 space-y-4">
                                         <label className="block">
-                                            <span className="mb-2 block text-sm font-medium text-foreground">Your Name</span>
+                                            <span className="mb-2 block text-sm font-medium text-black">Your Name</span>
                                             <input
                                                 value={draft.writerName}
                                                 onChange={(e) => setDraft((prev) => ({ ...prev, writerName: e.target.value }))}
                                                 placeholder="Your Name"
-                                                className="w-full rounded-xl border border-[var(--champagne-deep)]/50 bg-white/80 px-4 py-3 text-sm text-foreground outline-none transition focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                className="w-full rounded-xl border border-[var(--champagne-deep)]/50 bg-white/80 px-4 py-3 text-sm text-black outline-none transition focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
                                                 required
                                             />
                                         </label>
 
                                         {draft.writerName.trim() && (
-                                            <div className="rounded-2xl bg-[var(--blush)]/70 p-4 text-sm leading-relaxed text-foreground">
+                                            <div className="rounded-2xl bg-[var(--blush)]/70 p-4 text-sm leading-relaxed text-black">
                                                 Welcome, {draft.writerName.trim()} ❤️
                                                 <br />
                                                 Write everything your heart wants to say. Nothing written here will ever be judged.
@@ -509,7 +508,7 @@ export function SafePlaceBook() {
                                         )}
 
                                         <div className="rounded-2xl border border-[var(--champagne-deep)]/40 bg-white/70 p-4">
-                                            <div className="mb-3 text-sm font-medium text-foreground">Choose your mood</div>
+                                            <div className="mb-3 text-sm font-medium text-black">Choose your mood</div>
                                             <div className="flex flex-wrap gap-2">
                                                 {EMOTIONS.map((emotion) => (
                                                     <button
@@ -520,7 +519,7 @@ export function SafePlaceBook() {
                                                             "rounded-full border px-3 py-2 text-sm transition-all",
                                                             draft.emotion === emotion.icon
                                                                 ? "border-[var(--rose-gold)] bg-[var(--blush)] text-foreground"
-                                                                : "border-[var(--champagne-deep)]/40 bg-white text-muted-foreground hover:border-[var(--rose-gold)]",
+                                                                : "border-[var(--champagne-deep)]/40 bg-white text-black hover:border-[var(--rose-gold)]",
                                                         )}
                                                     >
                                                         <span className="mr-1">{emotion.icon}</span>
@@ -540,7 +539,7 @@ export function SafePlaceBook() {
 
                                     <div className="space-y-4">
                                         <div className="rounded-2xl border border-[var(--champagne-deep)]/40 bg-white/70 p-4">
-                                            <div className="mb-2 text-sm font-medium text-foreground">How serious is this?</div>
+                                            <div className="mb-2 text-sm font-medium text-black">How serious is this?</div>
                                             <input
                                                 type="range"
                                                 min={1}
@@ -549,16 +548,16 @@ export function SafePlaceBook() {
                                                 onChange={(e) => setDraft((prev) => ({ ...prev, severity: Number(e.target.value) }))}
                                                 className="w-full accent-[var(--rose-gold)]"
                                             />
-                                            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                                            <div className="mt-2 flex items-center justify-between text-xs text-black">
                                                 <span>💗 Small misunderstanding</span>
                                                 <span>❤️ Something that bothered me</span>
                                                 <span>💔 It really hurt me</span>
                                             </div>
-                                            <p className="mt-2 text-sm text-foreground">Selected level: {severityLabel(draft.severity)}</p>
+                                            <p className="mt-2 text-sm text-black">Selected level: {severityLabel(draft.severity)}</p>
                                         </div>
 
                                         <div className="rounded-2xl border border-[var(--champagne-deep)]/40 bg-white/70 p-4">
-                                            <div className="mb-2 text-sm font-medium text-foreground">What do you need from me?</div>
+                                            <div className="mb-2 text-sm font-medium text-black">What do you need from me?</div>
                                             <div className="grid gap-2 sm:grid-cols-2">
                                                 {NEEDS.map((need) => {
                                                     const checked = draft.needs.includes(need)
@@ -595,7 +594,7 @@ export function SafePlaceBook() {
                                             {showPrompts && (
                                                 <div className="mt-3 grid gap-2">
                                                     {PROMPTS.map((prompt) => (
-                                                        <label key={prompt} className="block text-sm text-foreground">
+                                                        <label key={prompt} className="block text-sm text-black">
                                                             <span className="mb-1 block">{prompt}</span>
                                                             <textarea
                                                                 rows={2}
@@ -615,7 +614,7 @@ export function SafePlaceBook() {
                                         </div>
 
                                         <div className="rounded-2xl border border-[var(--champagne-deep)]/40 bg-white/70 p-4">
-                                            <label className="block text-sm font-medium text-foreground">
+                                            <label className="block text-sm font-medium text-black">
                                                 Your message
                                                 <textarea
                                                     rows={7}
@@ -683,7 +682,7 @@ export function SafePlaceBook() {
                                     "rounded-full border px-3 py-2 text-xs font-medium transition-all",
                                     activeFilter === value
                                         ? "border-[var(--rose-gold)] bg-[var(--blush)] text-foreground"
-                                        : "border-[var(--champagne-deep)]/45 bg-white/80 text-muted-foreground hover:border-[var(--rose-gold)]",
+                                        : "border-[var(--champagne-deep)]/45 bg-white/80 text-black hover:border-[var(--rose-gold)]",
                                 )}
                             >
                                 {label}
@@ -695,8 +694,8 @@ export function SafePlaceBook() {
                 <div className="rounded-[2rem] border border-[var(--champagne-deep)]/40 bg-white/65 p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.24)] backdrop-blur-sm">
                     {filteredPages.length === 0 ? (
                         <div className="rounded-[1.5rem] border border-dashed border-[var(--champagne-deep)]/45 bg-[var(--soft-beige)] px-6 py-16 text-center">
-                            <h3 className="font-serif text-2xl text-foreground">Our story hasn&apos;t written its first page yet.</h3>
-                            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                            <h3 className="font-serif text-2xl text-black">Our story hasn&apos;t written its first page yet.</h3>
+                            <p className="mt-3 text-sm leading-relaxed text-black">
                                 Whenever something is too difficult to say... Write it here. I&apos;ll always listen.
                             </p>
                         </div>
@@ -710,7 +709,7 @@ export function SafePlaceBook() {
                             <div className="flex items-center justify-between gap-3">
                                 <div>
                                     <p className="text-xs uppercase tracking-[0.24em] text-[var(--rose-gold)]">Page {selectedPage + 1} of {filteredPages.length}</p>
-                                    <h3 className="font-serif text-2xl text-foreground">Written by {selectedPageData?.writerName}</h3>
+                                    <h3 className="font-serif text-2xl text-black">Written by {selectedPageData?.writerName}</h3>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
@@ -734,7 +733,7 @@ export function SafePlaceBook() {
 
                             {selectedPageData && (
                                 <article className="rounded-[1.75rem] border border-[var(--champagne-deep)]/40 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(250,245,239,0.95))] p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.22)]">
-                                    <div className="grid gap-3 text-sm text-foreground sm:grid-cols-2">
+                                    <div className="grid gap-3 text-sm text-black sm:grid-cols-2">
                                         <div><strong>Written by:</strong> {selectedPageData.writerName}</div>
                                         <div><strong>Date:</strong> {new Date(selectedPageData.createdAt).toLocaleDateString()}</div>
                                         <div><strong>Mood:</strong> {selectedPageData.emotion}</div>
@@ -743,11 +742,11 @@ export function SafePlaceBook() {
                                     </div>
 
                                     <div className="mt-5 rounded-[1.5rem] bg-white/85 p-4 shadow-sm">
-                                        <p className="whitespace-pre-wrap leading-relaxed text-foreground">{selectedPageData.message}</p>
+                                        <p className="whitespace-pre-wrap leading-relaxed text-black">{selectedPageData.message}</p>
                                     </div>
 
                                     <div className="mt-5 rounded-[1.5rem] border border-[var(--champagne-deep)]/40 bg-white/80 p-4">
-                                        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+                                        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-black">
                                             <HeartHandshake className="size-4 text-[var(--rose-gold)]" />
                                             Conversation
                                         </div>
@@ -755,7 +754,7 @@ export function SafePlaceBook() {
                                             {selectedPageData.conversation.map((entry, index) => (
                                                 <div key={`${entry.createdAt}-${index}`} className="rounded-xl bg-[var(--soft-beige)] px-3 py-2">
                                                     <div className="text-xs uppercase tracking-[0.2em] text-[var(--rose-gold)]">{entry.speaker}</div>
-                                                    <p className="mt-1 text-sm leading-relaxed text-foreground">{entry.text}</p>
+                                                    <p className="mt-1 text-sm leading-relaxed text-black">{entry.text}</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -804,8 +803,8 @@ export function SafePlaceBook() {
 
             <div className="mt-8 rounded-[2rem] border border-[var(--champagne-deep)]/40 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(249,239,235,0.96))] p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.24)]">
                 <div className="text-center">
-                    <h3 className="font-serif text-3xl text-foreground">❤️ Our Promise ❤️</h3>
-                    <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                    <h3 className="font-serif text-3xl text-black">❤️ Our Promise ❤️</h3>
+                    <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-black">
                         No matter how many pages this book has, we promise to choose listening over silence, understanding over pride,
                         forgiveness over anger, and love over everything else.
                     </p>
