@@ -90,6 +90,8 @@ const EMPTY_DRAFT: DraftState = {
     conversation: [],
 }
 
+const TEXT_INPUT_CLASSNAME = "w-full rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-3 text-sm text-black placeholder:text-black/60 outline-none transition focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+
 const STORAGE_KEY = "safe-place-pages"
 const SHARED_STORAGE_KEY = `${STORAGE_KEY}:shared`
 
@@ -193,6 +195,10 @@ export function SafePlaceBook() {
                 saveToStorage(nextPages)
                 return
             }
+
+            if (error) {
+                console.error("safe_place_pages load error", error)
+            }
         }
 
         if (typeof window !== "undefined") {
@@ -290,9 +296,15 @@ export function SafePlaceBook() {
             })
 
             if (editId) {
-                await supabase.from("safe_place_pages").update(payload).eq("id", editId)
+                const { error } = await supabase.from("safe_place_pages").update(payload).eq("id", editId)
+                if (error) {
+                    console.error("safe_place_pages update error", error)
+                }
             } else {
-                await supabase.from("safe_place_pages").insert(payload)
+                const { error } = await supabase.from("safe_place_pages").insert(payload)
+                if (error) {
+                    console.error("safe_place_pages insert error", error)
+                }
             }
         }
 
@@ -311,7 +323,10 @@ export function SafePlaceBook() {
         saveToStorage(nextPages)
 
         if (supabaseConfigured && user?.id) {
-            await supabase.from("safe_place_pages").delete().eq("id", pageId)
+            const { error } = await supabase.from("safe_place_pages").delete().eq("id", pageId)
+            if (error) {
+                console.error("safe_place_pages delete error", error)
+            }
         }
 
         if (selectedPage >= filteredPages.length - 1) {
@@ -361,10 +376,14 @@ export function SafePlaceBook() {
         setReplyDraft("")
 
         if (supabaseConfigured && user?.id) {
-            await supabase
+            const { error } = await supabase
                 .from("safe_place_pages")
                 .update({ conversation: nextConversation, updated_at: new Date().toISOString() })
                 .eq("id", pageId)
+
+            if (error) {
+                console.error("safe_place_pages reply error", error)
+            }
         }
     }
 
@@ -376,10 +395,14 @@ export function SafePlaceBook() {
         saveToStorage(nextPages)
 
         if (supabaseConfigured && user?.id) {
-            await supabase
+            const { error } = await supabase
                 .from("safe_place_pages")
                 .update({ resolved: true, status: "Resolved With Love", updated_at: new Date().toISOString() })
                 .eq("id", pageId)
+
+            if (error) {
+                console.error("safe_place_pages resolve error", error)
+            }
         }
     }
 
@@ -502,7 +525,7 @@ export function SafePlaceBook() {
                                                 value={draft.writerName}
                                                 onChange={(e) => setDraft((prev) => ({ ...prev, writerName: e.target.value }))}
                                                 placeholder="Your Name"
-                                                className="w-full rounded-xl border border-[var(--champagne-deep)]/50 bg-white/80 px-4 py-3 text-sm text-black outline-none transition focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                className={TEXT_INPUT_CLASSNAME}
                                                 required
                                             />
                                         </label>
@@ -613,7 +636,7 @@ export function SafePlaceBook() {
                                                                         promptAnswers: { ...prev.promptAnswers, [prompt]: e.target.value },
                                                                     }))
                                                                 }
-                                                                className="w-full rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                                className={TEXT_INPUT_CLASSNAME}
                                                             />
                                                         </label>
                                                     ))}
@@ -629,7 +652,7 @@ export function SafePlaceBook() {
                                                     value={draft.message}
                                                     onChange={(e) => setDraft((prev) => ({ ...prev, message: e.target.value }))}
                                                     placeholder="Tell me everything..."
-                                                    className="mt-2 w-full rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-3 text-sm outline-none transition focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                    className={cn(TEXT_INPUT_CLASSNAME, "mt-2")}
                                                 />
                                             </label>
                                         </div>
@@ -668,7 +691,7 @@ export function SafePlaceBook() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search writer, date, emotion, status or keyword"
-                        className="w-full rounded-xl border border-[var(--champagne-deep)]/50 bg-white/85 px-4 py-3 text-sm outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                        className={cn(TEXT_INPUT_CLASSNAME, "bg-white/85")}
                     />
 
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -772,7 +795,7 @@ export function SafePlaceBook() {
                                                 value={replyDraft}
                                                 onChange={(e) => setReplyDraft(e.target.value)}
                                                 placeholder="Reply inside this page"
-                                                className="flex-1 rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                className={cn(TEXT_INPUT_CLASSNAME, "flex-1")}
                                             />
                                             <Button
                                                 onClick={() => handleReply(selectedPageData.id)}
