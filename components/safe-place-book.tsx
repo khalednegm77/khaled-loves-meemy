@@ -92,6 +92,50 @@ const EMPTY_DRAFT: DraftState = {
 
 const STORAGE_KEY = "safe-place-pages"
 
+function createPageId() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return crypto.randomUUID()
+    }
+
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function mapDbPage(row: any): SafePlacePage {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        writerName: row.writer_name,
+        message: row.message,
+        emotion: row.emotion,
+        severity: row.severity,
+        needs: Array.isArray(row.needs) ? row.needs : [],
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        status: row.status,
+        favorite: Boolean(row.favorite),
+        resolved: Boolean(row.resolved),
+        conversation: Array.isArray(row.conversation) ? row.conversation : [],
+    }
+}
+
+function mapPageToDb(page: SafePlacePage) {
+    return {
+        id: page.id,
+        user_id: page.userId,
+        writer_name: page.writerName,
+        message: page.message,
+        emotion: page.emotion,
+        severity: page.severity,
+        needs: page.needs,
+        created_at: page.createdAt,
+        updated_at: page.updatedAt,
+        status: page.status,
+        favorite: page.favorite,
+        resolved: page.resolved,
+        conversation: page.conversation,
+    }
+}
+
 function severityLabel(value: number) {
     if (value <= 1) return "Small misunderstanding"
     if (value === 2) return "Something that bothered me"
@@ -136,12 +180,13 @@ export function SafePlaceBook() {
             const { data, error } = await supabase
                 .from("safe_place_pages")
                 .select("*")
-                .eq("userId", user.id)
-                .order("createdAt", { ascending: true })
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: true })
 
             if (!error && data) {
-                setPages(data as SafePlacePage[])
-                saveToStorage(data as SafePlacePage[])
+                const nextPages = data.map(mapDbPage)
+                setPages(nextPages)
+                saveToStorage(nextPages)
                 return
             }
         }
@@ -207,7 +252,7 @@ export function SafePlaceBook() {
 
         const now = new Date().toISOString()
         const pageData: SafePlacePage = {
-            id: editId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            id: editId ?? createPageId(),
             userId: user?.id ?? "guest",
             writerName: draft.writerName.trim(),
             message: draft.message.trim(),
@@ -232,10 +277,10 @@ export function SafePlaceBook() {
         saveToStorage(nextPages)
 
         if (supabaseConfigured && user?.id) {
-            const payload = {
+            const payload = mapPageToDb({
                 ...pageData,
                 userId: user.id,
-            }
+            })
 
             if (editId) {
                 await supabase.from("safe_place_pages").update(payload).eq("id", editId)
@@ -309,7 +354,10 @@ export function SafePlaceBook() {
         setReplyDraft("")
 
         if (supabaseConfigured && user?.id) {
-            await supabase.from("safe_place_pages").update({ conversation: nextConversation }).eq("id", pageId)
+            await supabase
+                .from("safe_place_pages")
+                .update({ conversation: nextConversation, updated_at: new Date().toISOString() })
+                .eq("id", pageId)
         }
     }
 
@@ -321,7 +369,10 @@ export function SafePlaceBook() {
         saveToStorage(nextPages)
 
         if (supabaseConfigured && user?.id) {
-            await supabase.from("safe_place_pages").update({ resolved: true, status: "Resolved With Love" }).eq("id", pageId)
+            await supabase
+                .from("safe_place_pages")
+                .update({ resolved: true, status: "Resolved With Love", updated_at: new Date().toISOString() })
+                .eq("id", pageId)
         }
     }
 
@@ -383,7 +434,7 @@ export function SafePlaceBook() {
             </div>
 
             {bookOpen && (
-                <div className="fixed inset-0 z-50 overflow-hidden bg-black/65 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/65 backdrop-blur-sm">
                     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
                         {Array.from({ length: 28 }).map((_, index) => (
                             <span
@@ -413,8 +464,8 @@ export function SafePlaceBook() {
                         ))}
                     </div>
 
-                    <div className="safe-book-shell mx-auto flex h-full max-w-6xl items-center justify-center px-3 py-8 sm:px-5">
-                        <div className="safe-book relative w-full max-w-5xl rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(247,234,232,0.96))] p-3 shadow-[0_24px_80px_-26px_rgba(0,0,0,0.45)]">
+                    <div className="safe-book-shell mx-auto flex min-h-screen max-w-6xl items-start justify-center px-2 py-3 sm:px-5 sm:py-8">
+                        <div className="safe-book relative max-h-[calc(100vh-1rem)] w-full max-w-5xl overflow-y-auto rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(247,234,232,0.96))] p-3 shadow-[0_24px_80px_-26px_rgba(0,0,0,0.45)] sm:max-h-[calc(100vh-2rem)]">
                             <button
                                 onClick={() => setBookOpen(false)}
                                 className="absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/70 text-foreground shadow-sm transition-colors hover:bg-white"
