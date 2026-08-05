@@ -171,11 +171,6 @@ export function SafePlaceBook() {
     }, [])
 
     const loadPages = useCallback(async () => {
-        if (!user?.id) {
-            setPages([])
-            return
-        }
-
         if (supabaseConfigured) {
             const { data, error } = await supabase
                 .from("safe_place_pages")
@@ -195,11 +190,14 @@ export function SafePlaceBook() {
             if (raw) {
                 try {
                     setPages(JSON.parse(raw) as SafePlacePage[])
+                    return
                 } catch {
                     setPages([])
                 }
             }
         }
+
+        setPages([])
     }, [saveToStorage, user?.id])
 
     useEffect(() => {
@@ -418,8 +416,8 @@ export function SafePlaceBook() {
         >
             <div className="mb-10 text-center sm:mb-14">
                 <p className="mb-3 text-xs uppercase tracking-[0.3em] text-[var(--rose-gold)] sm:text-sm">A safe space for us</p>
-                <h2 className="text-balance font-serif text-3xl font-semibold text-black sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
-                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-black">
+                <h2 className="text-balance font-serif text-3xl font-semibold text-white sm:text-5xl">❤️ We Listen & We Fix ❤️</h2>
+                <p className="mx-auto mt-4 max-w-3xl text-pretty leading-relaxed text-white">
                     Sometimes love isn&apos;t about never making mistakes. It&apos;s about having the courage to talk, the patience to listen,
                     and the love to understand. Every feeling is welcome here.
                 </p>
@@ -764,7 +762,7 @@ export function SafePlaceBook() {
                                                 value={replyDraft}
                                                 onChange={(e) => setReplyDraft(e.target.value)}
                                                 placeholder="Reply inside this page"
-                                                className="flex-1 rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
+                                                className="flex-1 rounded-xl border border-[var(--champagne-deep)]/50 bg-white/90 px-3 py-2 text-sm text-black outline-none focus:border-[var(--rose-gold)] focus:ring-2 focus:ring-[var(--rose-gold)]/25"
                                             />
                                             <Button
                                                 onClick={() => handleReply(selectedPageData.id)}
@@ -788,7 +786,7 @@ export function SafePlaceBook() {
                                             {selectedPageData.favorite ? "★ Favorite" : "☆ Favorite"}
                                         </Button>
                                         {!selectedPageData.resolved && (
-                                            <Button onClick={() => handleResolve(selectedPageData.id)} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+                                            <Button onClick={() => handleResolve(selectedPageData.id)} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-black">
                                                 <ShieldCheck className="mr-2 size-4" />
                                                 Resolve with love
                                             </Button>
