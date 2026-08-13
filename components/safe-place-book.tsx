@@ -165,6 +165,7 @@ export function SafePlaceBook() {
     const [activeFilter, setActiveFilter] = useState<"all" | "resolved" | "waiting" | "hurt" | "angry" | "happy" | "month" | "favorite">("all")
     const [editId, setEditId] = useState<string | null>(null)
     const [replyDraft, setReplyDraft] = useState("")
+    const [replySpeaker, setReplySpeaker] = useState("Negm")
     const [selectedPage, setSelectedPage] = useState<number>(0)
     const touchStartX = useRef<number | null>(null)
     const touchEndX = useRef<number | null>(null)
@@ -372,7 +373,7 @@ export function SafePlaceBook() {
 
         const nextConversation = [
             ...page.conversation,
-            { speaker: page.writerName, text: replyDraft.trim(), createdAt: new Date().toISOString() },
+            { speaker: replySpeaker, text: replyDraft.trim(), createdAt: new Date().toISOString() },
         ]
         const nextUpdatedAt = new Date().toISOString()
 
@@ -395,6 +396,7 @@ export function SafePlaceBook() {
         setPages(nextPages)
         saveToStorage(nextPages)
         setReplyDraft("")
+        setReplySpeaker("Negm")
     }
 
     const handleResolve = async (pageId: string) => {
@@ -802,20 +804,48 @@ export function SafePlaceBook() {
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="mt-3 flex gap-2">
-                                            <textarea
-                                                rows={2}
-                                                value={replyDraft}
-                                                onChange={(e) => setReplyDraft(e.target.value)}
-                                                placeholder="Reply inside this page"
-                                                className={cn(TEXT_INPUT_CLASSNAME, "flex-1")}
-                                            />
-                                            <Button
-                                                onClick={() => handleReply(selectedPageData.id)}
-                                                className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
-                                            >
-                                                Reply
-                                            </Button>
+                                        <div className="mt-3">
+                                            <div className="mb-3">
+                                                <p className="mb-2 text-sm font-medium text-black">
+                                                    Reply as:
+                                                </p>
+
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant={replySpeaker === "Negm" ? "default" : "outline"}
+                                                        onClick={() => setReplySpeaker("Negm")}
+                                                        className="rounded-full px-4 py-2 text-sm"
+                                                    >
+                                                        Negm
+                                                    </Button>
+
+                                                    <Button
+                                                        type="button"
+                                                        variant={replySpeaker === "Amyy" ? "default" : "outline"}
+                                                        onClick={() => setReplySpeaker("Amyy")}
+                                                        className="rounded-full px-4 py-2 text-sm"
+                                                    >
+                                                        Amyy
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <textarea
+                                                    rows={2}
+                                                    value={replyDraft}
+                                                    onChange={(e) => setReplyDraft(e.target.value)}
+                                                    placeholder="Reply inside this page"
+                                                    className={cn(TEXT_INPUT_CLASSNAME, "flex-1")}
+                                                />
+                                                <Button
+                                                    onClick={() => handleReply(selectedPageData.id)}
+                                                    className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+                                                >
+                                                    Reply
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
 
