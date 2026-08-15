@@ -90,7 +90,7 @@ export function Gallery() {
   return (
     <section
       ref={sectionRef}
-      id="gallery"
+      id="memories"
       className="reveal mx-auto w-full max-w-6xl overflow-hidden px-5 py-16 sm:px-6 sm:py-24"
     >
       {/* Section header */}
