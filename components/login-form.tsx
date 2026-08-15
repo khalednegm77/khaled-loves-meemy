@@ -5,21 +5,43 @@ import { Heart, Mail, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "./auth-context"
 
 export function LoginForm() {
-  const { signIn } = useAuth()
+  const { signIn, signUp } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setMessage(null)
     setLoading(true)
 
     try {
-      const { error } = await signIn(email, password)
-      if (error) setError("Invalid email or password. Please try again.")
+      const { error } = isCreatingAccount
+        ? await signUp(email.trim(), password)
+        : await signIn(email.trim(), password)
+
+      if (error) {
+        const errorMessage = error.message.toLowerCase()
+        if (errorMessage.includes("email not confirmed")) {
+          setError("Please confirm your email from the message Supabase sent you.")
+        } else if (errorMessage.includes("failed to fetch") || errorMessage.includes("network")) {
+          setError("Supabase could not be reached. Please check the project URL and anon key.")
+        } else if (isCreatingAccount && errorMessage.includes("already registered")) {
+          setError("This email already has an account. Switch to Sign In.")
+        } else if (isCreatingAccount) {
+          setError("We could not create that account. Check the email and password, then try again.")
+        } else {
+          setError("Invalid email or password. If you do not have an account, choose Create account below.")
+        }
+      } else if (isCreatingAccount) {
+        setMessage("Account created. Check your email to confirm it, then sign in.")
+        setIsCreatingAccount(false)
+      }
     } finally {
       setLoading(false)
     }
@@ -45,8 +67,13 @@ export function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-lg">
           {error && (
-            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            <div role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
               {error}
+            </div>
+          )}
+          {message && (
+            <div role="status" className="rounded-lg bg-primary/10 p-3 text-sm text-primary">
+              {message}
             </div>
           )}
 
@@ -99,7 +126,19 @@ export function LoginForm() {
             disabled={loading}
             className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? "Please wait…" : "Sign In"}
+            {loading ? "Please wait…" : isCreatingAccount ? "Create account" : "Sign In"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsCreatingAccount((current) => !current)
+              setError(null)
+              setMessage(null)
+            }}
+            className="mt-4 w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            {isCreatingAccount ? "Already have an account? Sign in" : "Need an account? Create one"}
           </button>
         </form>
       </div>
