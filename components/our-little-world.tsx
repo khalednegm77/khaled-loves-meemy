@@ -1,16 +1,17 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
     BookOpenText,
     Heart,
     ImageIcon,
-    LockKeyhole,
     Mail,
     Sparkles,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/components/auth-context"
+import { supabase, supabaseConfigured } from "@/lib/supabase-client"
 
 type Destination = {
     id: string
@@ -18,6 +19,15 @@ type Destination = {
     subtitle: string
     icon: typeof Mail
     message: string
+}
+
+type KissEvent = {
+    id: string
+    sender_id: string
+    receiver_id: string
+    sender_name: string
+    receiver_name: string
+    created_at: string
 }
 
 const HEART_SYMBOLS = ["❤️", "♡", "💕", "💗", "🤍"]
@@ -52,6 +62,27 @@ const destinations: Destination[] = [
         message: "A quiet place for glances, laughter, and the little details that make our world feel so alive.",
     },
 ]
+
+function getUserNameFromEmail(email?: string | null) {
+    const normalized = (email ?? "").toLowerCase()
+
+    if (normalized.includes("amyy")) return "Amyy"
+    if (normalized.includes("negm") || normalized.includes("khaled")) return "Negm"
+
+    return "Amyy"
+}
+
+function getFormattedKissTime(value: string) {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return "Today"
+
+    return date.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    })
+}
 
 export function HeartWallpaper() {
     const hearts = useMemo(
@@ -92,12 +123,206 @@ export function HeartWallpaper() {
 }
 
 export function OurLittleWorld() {
+    const { user } = useAuth()
     const [selectedId, setSelectedId] = useState(destinations[0].id)
+    const [notification, setNotification] = useState<string | null>(null)
+    const [kissHistory, setKissHistory] = useState<KissEvent[]>([])
+    const [isSendingKiss, setIsSendingKiss] = useState(false)
+    const [kissBurst, setKissBurst] = useState(0)
+    const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+
+    const myName = useMemo(() => getUserNameFromEmail(user?.email), [user?.email])
+    const partnerName = myName === "Negm" ? "Amyy" : "Negm"
 
     const selectedDestination =
         destinations.find((destination) => destination.id === selectedId) ?? destinations[0]
 
     const ActiveIcon = selectedDestination.icon
+
+    const loadKissHistory = useCallback(async () => {
+        if (!user || !supabaseConfigured) return
+
+        const { data, error } = await supabase
+            .from("kiss_events")
+            .select("*")
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+            .order("created_at", { ascending: false })
+            .limit(8)
+
+        if (error) {
+            console.error("kiss_events load error", error)
+            return
+        }
+
+        setKissHistory((data ?? []) as KissEvent[])
+    }, [user])
+
+    useEffect(() => {
+        if (!notification) return
+
+        const timer = window.setTimeout(() => setNotification(null), 3300)
+        return () => window.clearTimeout(timer)
+    }, [notification])
+
+    useEffect(() => {
+        if (!user || !supabaseConfigured) return
+
+        void loadKissHistory()
+
+        const channel = supabase
+            .channel("kiss-events")
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "kiss_events",
+                },
+                (payload) => {
+                    const event = payload.new as KissEvent
+
+                    setKissHistory((prev) => {
+                        if (prev.some((item) => item.id === event.id)) return prev
+                        return [event, ...prev].slice(0, 8)
+                    })
+
+                    if (event.receiver_id === user.id) {
+                        setNotification(`💋 ${event.sender_name} sent you a kiss!`)
+                        setKissBurst((prev) => prev + 1)
+                    }
+                },
+            )
+            .subscribe()
+
+        subscriptionRef.current = channel
+
+        return () => {
+            void supabase.removeChannel(channel)
+        }
+    }, [loadKissHistory, user])
+
+    const handleSendKiss = useCallback(async () => {
+        if (!user || !supabaseConfigured) {
+            setNotification("Kiss unavailable right now.")
+            return
+        }
+
+        const receiverName = myName === "Negm" ? "Amyy" : "Negm"
+
+        let receiverId: string | null = null
+
+        if (supabaseConfigured) {
+            const { data, error } = await supabase
+                .from("couple_members")
+                .select("user_id, partner_user_id")
+                .or(`user_id.eq.${user.id},partner_user_id.eq.${user.id}`)
+                .maybeSingle()
+
+            if (!error && data) {
+                receiverId = data.user_id === user.id ? data.partner_user_id : data.user_id
+            }
+        }
+
+        if (!receiverId) {
+            setNotification(`💋 Please finish the couple link for ${receiverName} before sending a kiss.`)
+            return
+        }
+
+        setIsSendingKiss(true)
+
+        const payload = {
+            sender_id: user.id,
+            receiver_id: receiverId,
+            sender_name: myName,
+            receiver_name: receiverName,
+        }
+
+        const { data, error } = await supabase
+            .from("kiss_events")
+            .insert(payload)
+            .select()
+            .single()
+
+        setIsSendingKiss(false)
+
+        if (error) {
+            console.error("kiss_events insert error", error)
+            setNotification("💋 The kiss could not be sent right now.")
+            return
+        }
+
+        if (data) {
+            setKissHistory((prev) => [data as KissEvent, ...prev.filter((item) => item.id !== data.id)].slice(0, 8))
+            setNotification(`💋 Kiss sent to ${receiverName}`)
+            setKissBurst((prev) => prev + 1)
+        }
+    }, [myName, user])
+
+    const renderKissDetail = selectedId === "kiss" && (
+        <div className="mt-5 space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                    type="button"
+                    onClick={handleSendKiss}
+                    disabled={isSendingKiss}
+                    className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground shadow-[0_18px_35px_-20px_rgba(91,58,56,0.45)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    {isSendingKiss ? "Sending..." : `💋 Send a Kiss`}
+                </button>
+
+                {notification && (
+                    <div className="rounded-full border border-[var(--champagne-deep)]/50 bg-white/85 px-3 py-2 text-xs font-medium text-foreground shadow-sm">
+                        {notification}
+                    </div>
+                )}
+            </div>
+
+            <div className="relative overflow-hidden rounded-[1.25rem] border border-[var(--champagne-deep)]/40 bg-white/80 p-4">
+                <div
+                    key={kissBurst}
+                    className="pointer-events-none absolute inset-0 overflow-hidden"
+                    aria-hidden="true"
+                >
+                    {Array.from({ length: 18 }).map((_, index) => (
+                        <span
+                            key={`${kissBurst}-${index}`}
+                            className="kiss-particle"
+                            style={{
+                                left: `${10 + (index * 5) % 80}%`,
+                                bottom: `${8 + (index % 4) * 12}%`,
+                                animationDelay: `${index * 0.06}s`,
+                            }}
+                        >
+                            💋
+                        </span>
+                    ))}
+                </div>
+
+                <div className="relative">
+                    <p className="text-xs uppercase tracking-[0.25em] text-[var(--rose-gold)]">Kiss history</p>
+                    <div className="mt-3 space-y-2">
+                        {kissHistory.length === 0 ? (
+                            <p className="text-sm text-foreground/70">No kisses yet. Send the first one for your little world.</p>
+                        ) : (
+                            kissHistory.map((entry) => (
+                                <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--soft-beige)] px-3 py-2 text-sm text-foreground">
+                                    <div>
+                                        <div className="font-medium text-foreground">
+                                            {entry.sender_name} → {entry.receiver_name}
+                                        </div>
+                                        <div className="text-[0.7rem] uppercase tracking-[0.12em] text-[var(--rose-gold)]">
+                                            {getFormattedKissTime(entry.created_at)}
+                                        </div>
+                                    </div>
+                                    <span className="text-lg">💋</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 
     return (
         <section className="relative isolate mt-8 overflow-hidden py-14 sm:mt-10 sm:py-18 lg:mt-12 lg:py-20">
@@ -119,7 +344,7 @@ export function OurLittleWorld() {
                         </p>
                     </div>
 
-                    <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                    <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         {destinations.map((destination) => {
                             const Icon = destination.icon
                             const isActive = destination.id === selectedId
@@ -174,8 +399,10 @@ export function OurLittleWorld() {
                         </div>
 
                         <p className="mt-4 max-w-2xl text-base leading-relaxed text-foreground/80">
-                            {selectedDestination.message}
+                            {selectedDestination.id === "kiss" ? "A sweet little check-in between the two of you." : selectedDestination.message}
                         </p>
+
+                        {selectedId === "kiss" && renderKissDetail}
                     </div>
                 </div>
             </div>
