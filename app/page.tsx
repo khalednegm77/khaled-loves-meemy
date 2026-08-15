@@ -1,4 +1,4 @@
-se client"
+"use client"
 
 import { AuthProvider } from "@/components/auth-context"
 import { ContentProvider } from "@/components/content-context"
