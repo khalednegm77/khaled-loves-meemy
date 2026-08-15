@@ -51,13 +51,6 @@ const destinations: Destination[] = [
         icon: ImageIcon,
         message: "A quiet place for glances, laughter, and the little details that make our world feel so alive.",
     },
-    {
-        id: "secret-room",
-        title: "Secret Room",
-        subtitle: "Something special",
-        icon: LockKeyhole,
-        message: "🔐 Something special is waiting here...",
-    },
 ]
 
 export function HeartWallpaper() {
