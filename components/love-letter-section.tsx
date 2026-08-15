@@ -11,7 +11,7 @@ export function LoveLetterSection() {
   const paragraphs = message.split("\n\n").filter(Boolean)
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-primary/5 px-6 py-20 sm:py-28">
+    <section id="love-mail" className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-primary/5 px-6 py-20 sm:py-28">
       {/* Decorative blobs */}
       <div aria-hidden className="pointer-events-none absolute -left-32 -top-32 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
@@ -50,11 +50,10 @@ export function LoveLetterSection() {
               {paragraphs.map((para, i) => (
                 <p
                   key={i}
-                  className={`font-serif leading-loose text-foreground/90 ${
-                    i === 0
+                  className={`font-serif leading-loose text-foreground/90 ${i === 0
                       ? "text-xl font-medium text-primary"
                       : "text-base sm:text-lg"
-                  }`}
+                    }`}
                 >
                   {para}
                 </p>
