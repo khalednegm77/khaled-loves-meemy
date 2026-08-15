@@ -15,6 +15,7 @@ import { BucketListSection } from "./bucket-list-section"
 import { Closing } from "./closing"
 import { DayLikeToday } from "./day-like-today"
 import { ContentEditorButton } from "./content-editor-modal"
+import { OurLittleWorld } from "./our-little-world"
 import { LogOut } from "lucide-react"
 
 export function AppWrapper() {
@@ -32,8 +33,12 @@ export function AppWrapper() {
 
   return (
     <>
-      <main className="min-h-screen bg-background">
+      <div className="heart-wallpaper" aria-hidden="true">
+        {Array.from({ length: 18 }, (_, index) => <span key={index}>♡</span>)}
+      </div>
+      <main className="relative z-10 min-h-screen bg-background">
         <Hero />
+        <OurLittleWorld />
         <LoveCounter />
         <AnniversaryCountdown />
         <Gallery />

@@ -352,7 +352,65 @@
 }
 
 /* ── Respect reduced motion ─────────────────────────────── */
+.heart-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--primary);
+  opacity: 0.14;
+}
+
+.heart-wallpaper span {
+  position: absolute;
+  left: calc((var(--heart-index, 1) * 17%) - 6%);
+  top: calc((var(--heart-index, 1) * 23%) - 8%);
+  font-family: var(--font-serif);
+  font-size: clamp(1rem, 2vw, 1.7rem);
+  animation: wallpaper-drift 12s ease-in-out infinite;
+  animation-delay: calc(var(--heart-index, 1) * -0.7s);
+}
+
+.heart-wallpaper span:nth-child(3n) { left: 18%; top: 24%; }
+.heart-wallpaper span:nth-child(4n) { left: 42%; top: 68%; }
+.heart-wallpaper span:nth-child(5n) { left: 83%; top: 36%; }
+.heart-wallpaper span:nth-child(6n) { left: 92%; top: 82%; }
+
+@keyframes wallpaper-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-6deg); }
+  50% { transform: translate3d(0, -14px, 0) rotate(6deg); }
+}
+
+.world-entrance {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--background) 78%, var(--blush)), var(--background));
+}
+
+.world-wallpaper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.world-heart {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  color: var(--primary);
+  opacity: 0.16;
+  animation: float-heart 5s ease-in-out infinite;
+}
+
+.world-card {
+  min-height: 11rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .heart-wallpaper span,
+  .world-heart {
+    animation: none;
+  }
+
 
   .reveal,
   .reveal-stagger>*,
