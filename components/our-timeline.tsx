@@ -15,7 +15,7 @@ export function OurTimeline() {
   const items = (timeline.items as TimelineItem[]) || []
 
   return (
-    <section id="timeline" className="bg-secondary/40 px-6 py-20 sm:py-28">
+    <section id="our-story" className="bg-secondary/40 px-6 py-20 sm:py-28">
       <div className="mx-auto max-w-3xl">
         <div className="mb-14 text-center">
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-accent-foreground">
@@ -39,9 +39,8 @@ export function OurTimeline() {
               return (
                 <div
                   key={index}
-                  className={`relative flex items-start gap-6 sm:gap-0 ${
-                    isLeft ? "sm:flex-row" : "sm:flex-row-reverse"
-                  }`}
+                  className={`relative flex items-start gap-6 sm:gap-0 ${isLeft ? "sm:flex-row" : "sm:flex-row-reverse"
+                    }`}
                 >
                   {/* Mobile: dot on left */}
                   <div className="relative z-10 flex-shrink-0 sm:hidden">
@@ -53,9 +52,8 @@ export function OurTimeline() {
                   {/* Desktop: spacer + dot */}
                   <div className="hidden sm:flex sm:w-1/2 sm:items-center sm:justify-center">
                     <div
-                      className={`w-full ${
-                        isLeft ? "pr-10 text-right" : "pl-10 text-left"
-                      }`}
+                      className={`w-full ${isLeft ? "pr-10 text-right" : "pl-10 text-left"
+                        }`}
                     >
                       <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
                         {item.date}
@@ -72,9 +70,8 @@ export function OurTimeline() {
 
                   {/* Content */}
                   <div
-                    className={`flex-1 sm:w-1/2 ${
-                      isLeft ? "sm:pl-10" : "sm:pr-10"
-                    }`}
+                    className={`flex-1 sm:w-1/2 ${isLeft ? "sm:pl-10" : "sm:pr-10"
+                      }`}
                   >
                     {/* Mobile date */}
                     <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary sm:hidden">
