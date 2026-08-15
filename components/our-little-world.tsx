@@ -107,13 +107,13 @@ export function OurLittleWorld() {
     const ActiveIcon = selectedDestination.icon
 
     return (
-        <section className="relative isolate overflow-hidden py-16 sm:py-20 lg:py-24">
+        <section className="relative isolate mt-8 overflow-hidden py-14 sm:mt-10 sm:py-18 lg:mt-12 lg:py-20">
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.92),rgba(248,236,232,0.96)_35%,rgba(245,232,228,0.9)_100%)]" />
 
             <div className="mx-auto max-w-6xl px-5 sm:px-6">
-                <div className="rounded-[2rem] border border-white/50 bg-white/55 p-5 shadow-[0_24px_80px_-32px_rgba(129,92,82,0.45)] backdrop-blur-xl sm:p-7 lg:p-10">
+                <div className="rounded-[2.25rem] border border-white/60 bg-white/60 p-5 shadow-[0_28px_90px_-34px_rgba(129,92,82,0.58)] backdrop-blur-xl sm:p-7 lg:p-10">
                     <div className="mx-auto max-w-3xl text-center">
-                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--rose-gold)]/25 bg-[var(--blush)]/75 px-4 py-2 text-[0.7rem] font-medium uppercase tracking-[0.3em] text-[var(--foreground)]">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--rose-gold)]/25 bg-[var(--blush)]/75 px-4 py-2 text-[0.7rem] font-medium uppercase tracking-[0.3em] text-[var(--foreground)] shadow-[0_10px_25px_-18px_rgba(129,92,82,0.55)]">
                             <Sparkles className="size-3.5 text-[var(--rose-gold)]" />
                             Our Little World
                         </div>
@@ -169,7 +169,7 @@ export function OurLittleWorld() {
                         })}
                     </div>
 
-                    <div className="mt-6 rounded-[1.5rem] border border-[var(--champagne-deep)]/45 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,244,240,0.92))] p-5 shadow-[0_18px_35px_-28px_rgba(129,92,82,0.36)] sm:p-6">
+                    <div className="mt-6 rounded-[1.75rem] border border-[var(--champagne-deep)]/45 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(250,244,240,0.94))] p-5 shadow-[0_18px_35px_-28px_rgba(129,92,82,0.42)] sm:p-6">
                         <div className="flex items-center gap-3">
                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rose-gold)]/25 bg-[var(--blush)] text-[var(--rose-gold)]">
                                 <ActiveIcon className="size-5" />
